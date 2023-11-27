@@ -23,7 +23,7 @@ class ServiceRepository {
         try {
             const conn = await database.generateConnection();
             const result = await conn.query(`
-            SELECT * FROM services WHERE name ILIKE $1 AND company_id = $2 ;
+            SELECT * FROM services WHERE name ILIKE $1 AND company_id = $2 AND deleted_at IS NULL;
         `, [`%${name}%`, `${companyId}`]);
 
             return result.rows.length == 0 ? true : false;
@@ -81,7 +81,7 @@ class ServiceRepository {
         try {
             const conn = await database.generateConnection();
             const result = await conn.query(`
-            SELECT * FROM services INNER JOIN service_hours ON services.id = service_hours.service_id WHERE company_id = $1 AND deleted_at IS NULL;
+            SELECT * FROM services INNER JOIN service_hours ON services.id = service_hours.service_id WHERE company_id = $1 AND deleted_at IS NULL ORDER BY services.name, service_hours.start_time, service_hours.end_time ;
         `, [companyId]);
 
             return result.rows;

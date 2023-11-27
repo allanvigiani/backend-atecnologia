@@ -1,0 +1,73 @@
+name: Push-to-EC2
+on:
+  pull_request:
+    branches: ["main"]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login no Docker Hub
+        run: docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
+
+      - name: Build docker image auth-api
+        run: cd backend/api/auth && docker build -t atecnologia/auth-api .
+      - name: Push image auth-api
+        run: docker push atecnologia/auth-api
+
+      - name: Build docker image company-api
+        run: cd backend/api/company && docker build -t atecnologia/company-api .
+      - name: Push image company-api
+        run: docker push atecnologia/company-api
+
+      - name: Build docker image schedule-api
+        run: cd backend/api/schedule && docker build -t atecnologia/schedule-api .
+      - name: Push image schedule-api
+        run: docker push atecnologia/schedule-api
+
+      - name: Build docker image schedule-confirmation-api
+        run: cd backend/api/schedule-confirmation && docker build -t atecnologia/schedule-confirmation-api .
+      - name: Push image schedule-confirmation-api
+        run: docker push atecnologia/schedule-confirmation-api
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Pull da image from Docker Hub auth-api
+        run: docker pull atecnologia/auth-api:latest
+
+      - name: Remove Docker container auth-api
+        run: docker rm -f auth-api
+
+      - name: Run Docker continer auth-api
+        run: docker run -d -p 3001:3001 -e AUTH_SECRET=${{secrets.AUTH_SECRET}} -e DATABASE_USER=${{secrets.DATABASE_USER}} -e DATABASE_HOST=${{secrets.DATABASE_HOST}} -e DATABASE_PORT=${{secrets.DATABASE_PORT}} -e DATABASE_PASSWORD=${{secrets.DATABASE_PASSWORD}} -e DATABASE_NAME=${{secrets.DATABASE_NAME}} --name auth-api atecnologia/auth-api
+
+      - name: Pull da image from Docker Hub company-api
+        run: docker pull atecnologia/company-api:latest
+
+      - name: Remove Docker container company-api
+        run: docker rm -f company-api
+
+      - name: Run Docker continer company-api
+        run: docker run -d -p 3002:3002 -e AUTH_SECRET=${{secrets.AUTH_SECRET}} -e DATABASE_USER=${{secrets.DATABASE_USER}} -e DATABASE_HOST=${{secrets.DATABASE_HOST}} -e DATABASE_PORT=${{secrets.DATABASE_PORT}} -e DATABASE_PASSWORD=${{secrets.DATABASE_PASSWORD}} -e DATABASE_NAME=${{secrets.DATABASE_NAME}} --name company-api atecnologia/company-api
+
+      - name: Pull da image from Docker Hub schedule-api
+        run: docker pull atecnologia/schedule-api:latest
+
+      - name: Remove Docker container schedule-api
+        run: docker rm -f schedule-api
+
+      - name: Run Docker continer schedule-api
+        run: docker run -d -p 3003:3003 -e AUTH_SECRET=${{secrets.AUTH_SECRET}} -e DATABASE_USER=${{secrets.DATABASE_USER}} -e DATABASE_HOST=${{secrets.DATABASE_HOST}} -e DATABASE_PORT=${{secrets.DATABASE_PORT}} -e DATABASE_PASSWORD=${{secrets.DATABASE_PASSWORD}} -e DATABASE_NAME=${{secrets.DATABASE_NAME}} --name schedule-api atecnologia/schedule-api
+
+      - name: Pull da image from Docker Hub schedule-confirmation-api
+        run: docker pull atecnologia/schedule-confirmation-api:latest
+
+      - name: Remove Docker container schedule-confirmation-api
+        run: docker rm -f schedule-confirmation-api
+
+      - name: Run Docker continer schedule-confirmation-api
+        run: docker run -d -p 3004:3004 -e AUTH_SECRET=${{secrets.AUTH_SECRET}} -e DATABASE_USER=${{secrets.DATABASE_USER}} -e DATABASE_HOST=${{secrets.DATABASE_HOST}} -e DATABASE_PORT=${{secrets.DATABASE_PORT}} -e DATABASE_PASSWORD=${{secrets.DATABASE_PASSWORD}} -e DATABASE_NAME=${{secrets.DATABASE_NAME}} -e MONGO_URL=${{secrets.MONGO_URL}} --name schedule-confirmation-api atecnologia/schedule-confirmation-api

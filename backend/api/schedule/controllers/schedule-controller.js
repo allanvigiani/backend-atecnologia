@@ -78,8 +78,7 @@ class ScheduleController {
 
             const { data } = await axios.post(urlEmail, fields, config);
 
-            console.log(data);
-            return { message: `Email enviado com sucesso!`, status: 201 };
+            return { message: `${data.message}`, status: 201 };
         } catch (error) {
             return { message: error.message, status: 500 };
         }
